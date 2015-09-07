@@ -1,0 +1,217 @@
+<!-- David Teece -->
+<!-- Code for the Easy difficulty of the application -->
+<html>
+	<head>
+	<link rel="stylesheet" href="mystyle.css">
+
+	<!-- JQuery link -->
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+
+	<!-- AJAX/JavaScript -->
+	<script>
+
+	//Topic variables
+	var topic1 = "Animal";
+	var topic2 = "Christmas";
+	var topic3 = "Doctor";
+	var topic4 = "Food";
+	var topic5 = "History";
+	var topic6 = "School";
+	var topic7 = "Science";
+	var topic8 = "Sport";
+
+	var cookie = document.cookie;
+
+	//If none of the topics have been selected, redirect the user to the Topics page
+	if(cookie.indexOf(topic1) == -1 && cookie.indexOf(topic2) == -1 && cookie.indexOf(topic3) == -1 && cookie.indexOf(topic4) == -1 && cookie.indexOf(topic5) == -1 && cookie.indexOf(topic6) == -1 && cookie.indexOf(topic7) == -1 && cookie.indexOf(topic8) == -1)
+	{
+		alert("Hey, you didn't select any topics!");
+		document.location.href = "Topics.php";
+	}
+
+	//Timer variables
+	var time = 120;
+	var count = setInterval(countDown, 1000);
+
+	//Keep user score
+	var score = 0;
+
+	//Keeps track of lives
+	var lives = 3;
+
+
+	//Display starting joke
+	var newJoke = 1 + Math.floor(Math.random() * 10);
+	document.onload = getJoke(newJoke);
+
+	//Retrieve a joke from the database
+	function getJoke(jokeID)
+	{
+		if (window.XMLHttpRequest)
+		{
+			request = new XMLHttpRequest();
+		}
+
+		request.onreadystatechange = function()
+		{
+			if (request.readyState == 4 && request.status == 200)
+			{
+				document.getElementById("jokeText").innerHTML = request.responseText;
+			}
+		}
+
+		request.open("GET","getjoke.php?q="+jokeID,true);
+		request.send();
+	}
+
+	//Validate a user's answer
+	function processAnswer(answer)
+	{
+		result = new XMLHttpRequest();
+
+		result.onreadystatechange = function()
+		{
+			if (result.readyState == 4 && result.status == 200)
+			{
+				//Output whether the user is correct or not
+				document.getElementById("result").innerHTML = result.responseText;
+				var outcome = document.getElementById("result").innerHTML;
+
+				//Increment score if the user answered correctly
+				if(outcome == "Correct!")
+				{
+					score++;
+				}
+				else
+				{
+					document.getElementById('sound').play();
+					removeHeart();
+				}
+
+				//Set score
+				document.getElementById('correctNum').innerHTML = score;
+
+				//If all the jokes are answered, the game ends
+				if(score == 10)
+				{
+					var newGame = confirm("Congratulations, you won! Would you like to play again?");
+					if(newGame == true)
+					{
+						location.reload();
+					}
+					else
+					{
+						document.location.href = "main.html";
+					}
+				}
+			}
+		}
+
+		var tableID = document.getElementById("tableID").innerHTML;
+		var jokeID = document.getElementById("jokeID").innerHTML;
+
+		//Sends user's answer to PHP file
+		result.open("GET","processJoke.php?a="+answer+"&t="+tableID+"&j="+jokeID,true);
+		result.send();
+
+		//Clear textfield
+		document.getElementById('answer').value='';
+
+		//Bring up a new joke
+		newJoke = 1 + Math.floor(Math.random() * 10);
+
+		getJoke(newJoke);
+	}
+
+	//Countdown the timer
+	function countDown()
+	{
+		time--;
+		document.getElementById("time").innerHTML = time;
+
+		//If time runs out
+		if(time <= 0)
+		{
+			var newGame = confirm("Sorry, you're out of time! Would you like to play again?");
+			if(newGame == true)
+			{
+				location.reload();
+			}
+			else
+			{
+				document.location.href = "main.html";
+			}
+		}
+	}
+
+	//User gives wrong answer, heart is removed from page
+	function removeHeart()
+	{
+		$("#heart" + lives).fadeOut("slow");
+		lives--;
+		if(lives == 0)
+		{
+			setTimeout(noLives, 800);
+		}
+	}
+
+	//All three hearts are now gone
+	function noLives()
+	{
+		var newGame = confirm("Sorry, you're out of lives! Would you like to play again?");
+		if(newGame == true)
+		{
+			location.reload();
+		}
+		else
+		{
+			document.location.href = "main.html";
+		}
+	}
+
+	//If the enter key is pressed in the textfield, process the user answer
+	//Returning false prevents a form submission, which resets the game
+	function checkEnter(e)
+	{
+		if(e.keyCode == 13)
+		{
+		    processAnswer(answer.value);
+		    return false;
+		}
+	}
+
+    document.onkeypress = checkEnter;
+
+	</script>
+	</head>
+	<body>
+		<h1> Easy Mode </h1>
+		<div class="menu-square">
+			<div class="joke">
+				<div id="jokeText"><b></b></div>
+				<form>
+					<p> Enter the missing word here! </p>
+					<input id = "answer" type="text" name="answer">
+					<button type="button" onclick="processAnswer(answer.value)">Submit</button>
+					<br>
+				</form>
+
+				<div id="result">&nbsp;</div>
+				<div id="correct">Score: <span id = "correctNum"> 0</span></div>
+				<div id ="countdown">Time remaining: <span id= "time">120</span></div>
+			</div>
+
+			<div class="hearts">
+				<div id="heart1"> </div>
+				<div id="heart2"> </div>
+				<div id="heart3"> </div>
+			</div>
+
+			<a id="backGame" href="main.html"> Back to start </a>
+
+			<audio id="sound">
+			  <source src="Wrong.mp3" type="audio/mpeg">
+			</audio>
+		</div>
+	</body>
+</html>
