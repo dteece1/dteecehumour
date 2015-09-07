@@ -1,0 +1,189 @@
+<!-- David Teece -->
+<!-- Code for the hard difficulty of the application -->
+<html>
+	<head>
+		<link rel="stylesheet" href="mystyle.css">
+
+		<!-- JQuery link -->
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+
+		<!-- AJAX/JavaScript -->
+		<script>
+		//If no topics have been selected
+		if(document.cookie == "")
+		{
+			alert("What are you doing here? Go select some topics first!!");
+			document.location.href = "Topics.php";
+		}
+
+			//Timer variables
+			var time = 90;
+			var count = setInterval(countDown, 1000);
+
+			//Display joke on startup
+			var newJoke = 1 + Math.floor(Math.random() * 10);
+			document.onload = getJoke(newJoke);
+
+			//Keep user score
+			var score = 0;
+
+			//Keeps track of lives
+			var lives = 3;
+
+			//Retrieve a joke from the database using AJAX
+			function getJoke(jokeID)
+			{
+				if (window.XMLHttpRequest)
+				{
+					request = new XMLHttpRequest();
+				}
+
+				request.onreadystatechange = function()
+				{
+					if (request.readyState == 4 && request.status == 200)
+					{
+						document.getElementById("joke").innerHTML = request.responseText;
+					}
+				}
+
+				request.open("GET","getjoke.php?q="+jokeID,true);
+				request.send();
+			}
+
+			//Validate a user's answer
+			function processAnswer(answer)
+			{
+				result = new XMLHttpRequest();
+
+				result.onreadystatechange = function()
+				{
+					if (result.readyState == 4 && result.status == 200)
+					{
+						//Output whether the user is correct or not
+						document.getElementById("result").innerHTML = result.responseText;
+						var outcome = document.getElementById("result").innerHTML;
+
+						//Increment score if the user answered correctly
+						if(outcome == "Correct!")
+						{
+							score++;
+						}
+						else
+						{
+							document.getElementById('sound').play();
+							removeHeart();
+						}
+
+						//Set score
+						document.getElementById('correctNum').innerHTML = score;
+
+						//If all the jokes are answered, the game ends
+						if(score == 20)
+						{
+							var newGame = confirm("Congratulations, you won! Would you like to play again?");
+							if(newGame == true)
+							{
+								location.reload();
+							}
+							else
+							{
+								document.location.href = "main.html";
+							}
+						}
+					}
+				}
+
+				var tableID = document.getElementById("tableID").innerHTML;
+				var jokeID = document.getElementById("jokeID").innerHTML;
+
+				//Sends user's answer to PHP file
+				result.open("GET","processJoke.php?a="+answer+"&t="+tableID+"&j="+jokeID,true);
+				result.send();
+
+				//Clear textfield
+				document.getElementById('answer').value='';
+
+				//Bring up a new joke
+				//var newRand = 1 + Math.floor(Math.random() * 10);
+				newJoke++;
+				if(newJoke > 10)
+				{
+					newJoke = 1;
+				}
+				getJoke(newJoke);
+			}
+
+			//Countdown the timer
+			function countDown()
+			{
+				time--;
+				document.getElementById("time").innerHTML = time;
+
+				//If time runs out
+				if(time <= 0)
+				{
+					var newGame = confirm("Sorry, you're out of time! Would you like to play again?");
+					if(newGame == true)
+					{
+						location.reload();
+					}
+					else
+					{
+						document.location.href = "main.html";
+					}
+				}
+			}
+
+			//User gives wrong answer, heart is removed from page
+			function removeHeart()
+			{
+				$("#heart" + lives).fadeOut("slow");
+				lives--;
+				if(lives == 0)
+				{
+					setTimeout(noLives, 800);
+				}
+			}
+
+			//All three hearts are now extinguished
+			function noLives()
+			{
+				var newGame = confirm("Sorry, you're out of lives! Would you like to play again?");
+				if(newGame == true)
+				{
+					location.reload();
+				}
+				else
+				{
+					document.location.href = "main.html";
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<h1> Hard Mode </h1>
+		<div class="menu-square">
+			<div class="joke">
+				<div id="joke"><b></b></div>
+					<form>
+						<p> Enter the missing word here! </p>
+						<input id = "answer" type="text" name="answer">
+						<button type="button" onclick="processAnswer(answer.value)">Submit</button>
+						<br>
+					</form>
+				<div id="result">&nbsp;</div>
+				<div id="correct">Score: <span id = "correctNum"> 0</span></div>
+				<div id ="countdown">Time remaining: <span id= "time">90</span></div>
+			</div>
+			<div class="hearts">
+				<div id="heart1"> </div>
+				<div id="heart2"> </div>
+				<div id="heart3"> </div>
+			</div>
+			<a id="backGame" href="main.html"> Back to start </a>
+			<audio id="sound">
+					<source src="Wrong.mp3" type="audio/mpeg">
+			</audio>
+		</div>
+	</body>
+</html>
